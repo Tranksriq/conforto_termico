@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desempenho Térmico</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1117;--surf:#161b27;--surf2:#1e2535;--brd:#2a3347;--brd2:#3a4a6b;
+  --tx:#e2e8f0;--tx2:#94a3b8;--tx3:#64748b;
+  --ac:#38bdf8;--ac2:#0ea5e9;
+  --gn:#4ade80;--yw:#fbbf24;--or:#fb923c;--rd:#f87171;
+  --inp:#0d1520;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13px;line-height:1.6}
+
+/* ── header ── */
+header{background:var(--surf);border-bottom:1px solid var(--brd);padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200}
+header .logo{width:32px;height:32px;background:linear-gradient(135deg,var(--ac),#6366f1);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+header h1{font-size:14px;font-weight:600}
+header p{font-size:10px;color:var(--tx3);font-family:var(--mono)}
+.hdr-tabs{display:flex;gap:4px;margin-left:auto}
+.hdr-tab{background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;color:var(--tx2);transition:all .2s}
+.hdr-tab.active{background:var(--ac2);border-color:var(--ac2);color:#fff;font-weight:500}
+.hdr-tab:hover:not(.active){border-color:var(--ac2);color:var(--ac)}
+
+/* ── layout ── */
+.page{display:none}.page.active{display:block}
+.main-layout{display:grid;grid-template-columns:1fr 320px;gap:0;min-height:calc(100vh - 52px)}
+.scroll-area{padding:20px 24px;overflow-y:auto}
+.sidebar{background:var(--surf);border-left:1px solid var(--brd);padding:18px 16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+
+/* ── cards ── */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:16px;margin-bottom:16px}
+.card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--brd)}
+.tag{background:var(--surf2);border:1px solid var(--brd2);border-radius:5px;padding:1px 7px;font-family:var(--mono);font-size:9px;color:var(--ac);font-weight:500;text-transform:uppercase}
+.card-hdr h2{font-size:12px;font-weight:600}
+.card-hdr .sub{font-size:10px;color:var(--tx3);margin-left:auto}
+.sec{font-size:9px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px}
+hr.div{border:none;border-top:1px solid var(--brd);margin:12px 0}
+
+/* ── fields ── */
+.field{margin-bottom:8px}
+.field label{display:block;font-size:9px;color:var(--tx2);margin-bottom:2px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{width:100%;background:var(--inp);border:1px solid var(--brd);border-radius:6px;color:var(--tx);padding:6px 10px;font-family:var(--mono);font-size:11px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--ac2)}
+.uw{position:relative}.uw input{padding-right:44px}
+.uw span{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:9px;font-family:var(--mono);pointer-events:none}
+.res{background:var(--inp);border:1px solid var(--brd2);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:11px;color:var(--ac);min-height:32px;display:flex;align-items:center}
+.fg{display:grid;gap:8px}
+select option{background:var(--surf2)}
+
+/* ── elementos ── */
+.elem-block{background:var(--surf2);border:1px solid var(--brd);border-radius:9px;margin-bottom:10px;overflow:hidden}
+.elem-hdr{background:var(--surf);border-bottom:1px solid var(--brd);padding:8px 12px;display:flex;align-items:center;gap:8px}
+.eid{background:var(--ac2);color:#fff;border-radius:4px;padding:2px 7px;font-family:var(--mono);font-size:10px;font-weight:600}
+.ename{background:transparent;border:none;color:var(--tx);font-family:var(--sans);font-size:12px;font-weight:500;outline:none;flex:1;border-bottom:1px dashed var(--brd2);padding-bottom:1px}
+.eprops{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:8px 12px;border-bottom:1px solid var(--brd)}
+.eprops .field{margin:0}
+.layers-sec{padding:8px 12px}
+.lhdr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr;gap:4px;margin-bottom:4px}
+.lhdr span{font-size:8px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase}
+.lrow{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr;gap:4px;margin-bottom:3px;align-items:center}
+.lrow input{background:var(--inp);border:1px solid var(--brd);border-radius:4px;color:var(--tx);padding:3px 6px;font-family:var(--mono);font-size:10px;outline:none;width:100%}
+.lrow input:focus{border-color:var(--ac2)}
+.rc{background:var(--inp);border:1px dashed var(--brd2);border-radius:4px;color:var(--ac);padding:3px 6px;font-family:var(--mono);font-size:10px;text-align:right}
+.eres{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 12px;background:var(--surf);border-top:1px solid var(--brd)}
+.eres .ri label{font-size:8px;color:var(--tx3);font-family:var(--mono);display:block;margin-bottom:1px}
+.eres .ri span{font-family:var(--mono);font-size:12px;color:var(--ac);font-weight:600}
+.add-layer-btn{background:none;border:1px dashed var(--brd2);border-radius:4px;color:var(--tx3);cursor:pointer;padding:2px 8px;font-size:9px;font-family:var(--mono);margin-top:4px;transition:all .2s}
+.add-layer-btn:hover{border-color:var(--ac2);color:var(--ac2)}
+.add-btn{width:100%;background:none;border:1px dashed var(--brd2);border-radius:8px;color:var(--tx3);cursor:pointer;padding:9px;font-size:11px;font-family:var(--sans);margin-bottom:14px;transition:all .2s}
+.add-btn:hover{border-color:var(--ac);color:var(--ac)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;transition:color .2s;flex-shrink:0}
+.del-btn:hover{color:var(--rd)}
+
+/* ── tables ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;min-width:500px}
+th{background:var(--surf2);border:1px solid var(--brd);padding:5px 8px;color:var(--tx2);text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
+td{border:1px solid var(--brd);padding:4px 6px;text-align:center}
+.tl{text-align:left;color:var(--tx2);background:var(--surf2);padding-left:8px;font-size:10px}
+table input[type=number]{background:var(--inp);border:none;outline:none;color:var(--tx);font-family:var(--mono);font-size:10px;width:100%;text-align:center;padding:2px}
+.tc{background:var(--inp);color:var(--ac)}
+.tr-tot{background:var(--surf2);font-weight:600;color:var(--yw)}
+.tr-pk{background:#1a2035;color:var(--gn);font-weight:600}
+
+/* ── q surf config ── */
+.qsrow{display:grid;grid-template-columns:1.8fr 1.3fr 0.6fr 0.7fr 0.6fr 0.6fr 0.7fr 20px;gap:6px;align-items:end;margin-bottom:6px}
+.qsrow .field{margin:0}
+.qsrow input,.qsrow select{background:var(--inp);border:1px solid var(--brd);border-radius:5px;color:var(--tx);padding:5px 8px;font-family:var(--mono);font-size:10px;outline:none;width:100%}
+.qsrow input:focus,.qsrow select:focus{border-color:var(--ac2)}
+
+/* ── equip / loss ── */
+.eqrow{display:grid;grid-template-columns:2fr 0.5fr 1fr 1fr 18px;gap:6px;align-items:center;margin-bottom:4px}
+.lsrow{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 18px;gap:6px;align-items:center;margin-bottom:4px}
+.eqrow input,.lsrow input{background:var(--inp);border:1px solid var(--brd);border-radius:5px;color:var(--tx);padding:5px 8px;font-family:var(--mono);font-size:10px;outline:none;width:100%}
+.eqrow input:focus,.lsrow input:focus{border-color:var(--ac2)}
+.sub-cell{color:var(--or);font-family:var(--mono);font-size:10px;text-align:right}
+.tot-line{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--brd2);margin-top:6px}
+.tot-line span:first-child{color:var(--tx2);font-size:10px;font-family:var(--mono)}
+.tot-line span:last-child{color:var(--yw);font-family:var(--mono);font-size:12px;font-weight:600}
+.tip{font-size:9px;color:var(--tx3);font-style:italic;margin-top:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+
+/* ── sidebar ── */
+.sb-title{font-size:9px;color:var(--ac);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--brd)}
+.sb-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--brd)}
+.sb-row:last-child{border-bottom:none}
+.sb-lbl{font-size:9px;color:var(--tx3);font-family:var(--mono)}
+.sb-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ac)}
+.sb-val.yw{color:var(--yw)}
+.sb-val.rd{color:var(--rd)}
+.sb-val.gn{color:var(--gn)}
+.sb-val.or{color:var(--or)}
+.sb-big{font-family:var(--mono);font-size:22px;font-weight:600;text-align:center;padding:12px 0 4px}
+.sb-big-lbl{font-size:9px;color:var(--tx3);text-align:center;font-family:var(--mono)}
+.diag-sb{border-radius:7px;padding:10px 12px;font-size:11px;font-weight:600;text-align:center;border:1px solid;margin-top:10px;line-height:1.4}
+.d-ok{background:#052e16;border-color:var(--gn);color:var(--gn)}
+.d-warn{background:#1c1500;border-color:var(--yw);color:var(--yw)}
+.d-alert{background:#1a0e00;border-color:var(--or);color:var(--or)}
+.d-crit{background:#1a0000;border-color:var(--rd);color:var(--rd)}
+
+/* ── resumo page ── */
+.res-page{max-width:900px;margin:0 auto;padding:20px 24px}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.si{background:var(--surf2);border:1px solid var(--brd);border-radius:9px;padding:12px}
+.si label{font-size:9px;color:var(--tx3);font-family:var(--mono);display:block;margin-bottom:4px;text-transform:uppercase}
+.si .vv{font-family:var(--mono);font-size:19px;font-weight:600}
+.si .uu{font-size:11px;color:var(--tx2);margin-left:3px}
+.diag-full{border-radius:9px;padding:14px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;border:1px solid;margin-bottom:16px}
+.master-card table{min-width:300px}
+.step-box{background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:12px;margin-bottom:10px;font-family:var(--mono);font-size:11px}
+.step-box .step-title{color:var(--ac2);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.step-box .step-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--brd)}
+.step-box .step-row:last-child{border-bottom:none;font-weight:600;color:var(--yw);margin-top:4px;padding-top:6px;border-top:1px solid var(--brd2)}
+.step-box .step-row span:first-child{color:var(--tx2)}
+.step-box .step-row span:last-child{color:var(--tx)}
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌡️</div>
+  <div>
+    <h1>Desempenho Térmico</h1>
+    <p>Transmitância · Ganhos Solares · Balanço Térmico</p>
+  </div>
+  <div class="hdr-tabs">
+    <div class="hdr-tab active" onclick="showPage('calc')">📐 Cálculo</div>
+    <div class="hdr-tab"        onclick="showPage('res')">📋 Resumo</div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     PÁGINA 1 — CÁLCULO (layout + sidebar)
+══════════════════════════════════════════ -->
+<div id="page-calc" class="page active">
+  <div class="main-layout">
+
+    <!-- Área de scroll com todos os cálculos -->
+    <div class="scroll-area">
+
+      <!-- ① Elementos Construtivos -->
+      <div class="card">
+        <div class="card-hdr"><span class="tag">1</span><h2>Elementos Construtivos — Transmitância U</h2></div>
+        <div class="fg g4" style="margin-bottom:10px">
+          <div class="field"><label>he Parede vertical</label><div class="uw"><input type="number" id="he_p" value="0.17" step="0.01" oninput="recalcOutputs()"><span>m²K/W</span></div></div>
+          <div class="field"><label>he Cob. ganho</label><div class="uw"><input type="number" id="he_cg" value="0.22" step="0.01" oninput="recalcOutputs()"><span>m²K/W</span></div></div>
+          <div class="field"><label>he Cob. perda</label><div class="uw"><input type="number" id="he_cp" value="0.20" step="0.01" oninput="recalcOutputs()"><span>m²K/W</span></div></div>
+          <div class="field"><label>hi padrão</label><div class="uw"><input type="number" id="hi_p" value="0" step="0.01" oninput="recalcOutputs()"><span>m²K/W</span></div></div>
+        </div>
+        <div id="elem-container"></div>
+        <button class="add-btn" onclick="addElem()">＋ Adicionar Elemento Construtivo</button>
+      </div>
+
+      <!-- ② Radiação Solar Ig -->
+      <div class="card">
+        <div class="card-hdr"><span class="tag">2</span><h2>Radiação Solar Global — Ig (W/m²) por orientação e hora</h2></div>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Orientação</th><th>08h</th><th>09h</th><th>10h</th><th>11h</th><th>12h</th><th>13h</th><th>14h</th><th>15h</th><th>16h</th><th>17h</th></tr></thead>
+            <tbody>
+              <tr id="ig-row-0"><td class="tl">☀️ Horizontal (cobertura)</td>
+                <td><input type="number" value="484"  oninput="recalcOutputs()"></td><td><input type="number" value="730"  oninput="recalcOutputs()"></td>
+                <td><input type="number" value="930"  oninput="recalcOutputs()"></td><td><input type="number" value="1062" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="1103" oninput="recalcOutputs()"></td><td><input type="number" value="1062" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="930"  oninput="recalcOutputs()"></td><td><input type="number" value="730"  oninput="recalcOutputs()"></td>
+                <td><input type="number" value="484"  oninput="recalcOutputs()"></td><td><input type="number" value="214"  oninput="recalcOutputs()"></td>
+              </tr>
+              <tr id="ig-row-1"><td class="tl">🔆 Fachada Leste</td>
+                <td><input type="number" value="663" oninput="recalcOutputs()"></td><td><input type="number" value="645" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="509" oninput="recalcOutputs()"></td><td><input type="number" value="302" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="68"  oninput="recalcOutputs()"></td><td><input type="number" value="68"  oninput="recalcOutputs()"></td>
+                <td><input type="number" value="63"  oninput="recalcOutputs()"></td><td><input type="number" value="58"  oninput="recalcOutputs()"></td>
+                <td><input type="number" value="48"  oninput="recalcOutputs()"></td><td><input type="number" value="33"  oninput="recalcOutputs()"></td>
+              </tr>
+              <tr id="ig-row-2"><td class="tl">🔆 Fachada Norte</td>
+                <td><input type="number" value="48" oninput="recalcOutputs()"></td><td><input type="number" value="58" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="63" oninput="recalcOutputs()"></td><td><input type="number" value="68" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="68" oninput="recalcOutputs()"></td><td><input type="number" value="68" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="63" oninput="recalcOutputs()"></td><td><input type="number" value="58" oninput="recalcOutputs()"></td>
+                <td><input type="number" value="48" oninput="recalcOutputs()"></td><td><input type="number" value="33" oninput="recalcOutputs()"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ③ Ganhos Q -->
+      <div class="card">
+        <div class="card-hdr"><span class="tag">3</span><h2>Ganhos Solares Q (W) — Superfícies</h2><span class="sub">Fn Ig = α × U × Área / Constante</span></div>
+        <div style="display:grid;grid-template-columns:1.8fr 1.3fr 0.6fr 0.7fr 0.6fr 0.6fr 0.7fr 20px;gap:6px;margin-bottom:3px">
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">NOME</span>
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">LINHA Ig</span>
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">α</span>
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">U (W/m²K)</span>
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">ÁREA m²</span>
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">CONST.</span>
+          <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">Fn Ig</span>
+          <span></span>
+        </div>
+        <div id="qsurf-config"></div>
+        <button class="add-btn" style="margin-bottom:10px;padding:7px" onclick="addQSurf()">＋ Adicionar Superfície Solar</button>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Superfície</th><th>Fn Ig</th><th>08h</th><th>09h</th><th>10h</th><th>11h</th><th>12h</th><th>13h</th><th>14h</th><th>15h</th><th>16h</th><th>17h</th></tr></thead>
+            <tbody id="q-tbody"></tbody>
+            <tfoot>
+              <tr class="tr-tot"><td class="tl" colspan="2">TOTAL HORÁRIO (W)</td>
+                <td id="qt0">—</td><td id="qt1">—</td><td id="qt2">—</td><td id="qt3">—</td><td id="qt4">—</td>
+                <td id="qt5">—</td><td id="qt6">—</td><td id="qt7">—</td><td id="qt8">—</td><td id="qt9">—</td>
+              </tr>
+              <tr class="tr-pk"><td class="tl" colspan="2">🏆 PICO (W)</td><td colspan="10" id="q-peak">—</td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- ④ Balanço: Ganhos Internos + Perdas lado a lado -->
+      <div class="g2">
+        <div class="card">
+          <div class="card-hdr"><span class="tag">4A</span><h2>Ganhos Internos</h2></div>
+          <div class="sec">A1 — Ganho Solar Qsol (pico automático)</div>
+          <div class="res" id="bal-qsol">—</div>
+          <hr class="div">
+          <div class="sec">A2 — Pessoas</div>
+          <div class="fg" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="field"><label>Nº Pessoas</label><input type="number" id="n_pess" value="5" oninput="recalcOutputs()"></div>
+            <div class="field"><label>W/Pessoa</label><div class="uw"><input type="number" id="w_pess" value="65" oninput="recalcOutputs()"><span>W</span></div></div>
+            <div class="field"><label>Qp</label><div class="res" id="bal-qp">—</div></div>
+          </div>
+          <hr class="div">
+          <div class="sec">A3 — Iluminação</div>
+          <div class="fg" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="field"><label>Nº Lâmpadas</label><input type="number" id="n_lamp" value="20" oninput="recalcOutputs()"></div>
+            <div class="field"><label>Pot. Unit.</label><div class="uw"><input type="number" id="w_lamp" value="15" oninput="recalcOutputs()"><span>W</span></div></div>
+            <div class="field"><label>Qil</label><div class="res" id="bal-qil">—</div></div>
+          </div>
+          <hr class="div">
+          <div class="sec">A4 — Equipamentos</div>
+          <div style="display:grid;grid-template-columns:2fr 0.5fr 1fr 1fr 18px;gap:6px;margin-bottom:3px">
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">EQUIP.</span>
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">QTDE</span>
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">POT. (W)</span>
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">SUBTOTAL</span>
+            <span></span>
+          </div>
+          <div id="equip-list"></div>
+          <button class="add-btn" style="margin-bottom:0;padding:6px" onclick="addEquip()">＋ Equipamento</button>
+          <div class="tot-line"><span>Total Qe</span><span id="bal-qe">—</span></div>
+          <div class="tot-line" style="border-top:2px solid var(--ac2)"><span>TOTAL Qint</span><span id="bal-qint">—</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><span class="tag">4B</span><h2>Perdas de Calor — fn(Δt)</h2></div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 18px;gap:6px;margin-bottom:3px">
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">VIA</span>
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">U (W/m²K)</span>
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">ÁREA (m²)</span>
+            <span style="font-size:8px;color:var(--tx3);font-family:var(--mono)">U×A</span>
+            <span></span>
+          </div>
+          <div id="loss-list"></div>
+          <button class="add-btn" style="margin-bottom:0;padding:6px" onclick="addLoss()">＋ Via de Perda</button>
+          <div class="tot-line" style="border-top:2px solid var(--or)"><span>Total Q't (W/°C)</span><span id="bal-qt">—</span></div>
+          <hr class="div">
+          <div class="sec">Dados Climáticos</div>
+          <p class="tip" style="margin-bottom:8px">Preencha os 5 campos — os demais são calculados.</p>
+          <div class="fg g5" style="margin-bottom:8px">
+            <div class="field"><label>Td seco máx</label><div class="uw"><input type="number" id="Td"   value="29.8" step="0.1" oninput="recalcOutputs()"><span>°C</span></div></div>
+            <div class="field"><label>Ts úmido máx</label><div class="uw"><input type="number" id="Ts"   value="31"   step="0.1" oninput="recalcOutputs()"><span>°C</span></div></div>
+            <div class="field"><label>td seco mín</label><div class="uw"><input type="number" id="td_c" value="24.2" step="0.1" oninput="recalcOutputs()"><span>°C</span></div></div>
+            <div class="field"><label>ts úmido mín</label><div class="uw"><input type="number" id="ts_c" value="22.2" step="0.1" oninput="recalcOutputs()"><span>°C</span></div></div>
+            <div class="field"><label>UR</label><div class="uw"><input type="number" id="UR" value="76" step="1" oninput="recalcOutputs()"><span>%</span></div></div>
+          </div>
+          <div style="background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:8px 10px">
+            <div style="font-size:8px;color:var(--ac);font-family:var(--mono);text-transform:uppercase;margin-bottom:6px">⚡ Calculado</div>
+            <div class="fg g4">
+              <div class="field" style="margin:0"><label>t̄e máx = (Td+Ts)/2</label><div class="res" id="te_max_disp">—</div></div>
+              <div class="field" style="margin:0"><label>t̄e mín = (td+ts)/2</label><div class="res" id="te_min_disp">—</div></div>
+              <div class="field" style="margin:0"><label>t̄e média</label><div class="res" id="te_med_disp">—</div></div>
+              <div class="field" style="margin:0"><label>E = (t̄emax−t̄emin)/2</label><div class="res" id="E_disp">—</div></div>
+            </div>
+          </div>
+          <hr class="div">
+          <div class="sec">Fator de Inércia m</div>
+          <div class="field">
+            <select id="m_sel" onchange="recalcOutputs()">
+              <option value="0.8">0,8 — Construções pesadas</option>
+              <option value="0.6" selected>0,6 — Leves em contato com o solo</option>
+              <option value="0.4">0,4 — Leves, envidraçadas, elevadas do solo</option>
+            </select>
+          </div>
+          <div class="field"><label>T. Efetiva de Conforto</label>
+            <div class="uw"><input type="number" id="t_conf" value="36" step="0.5" oninput="recalcOutputs()"><span>°C</span></div>
+            <p class="tip">⚠️ Verificar na carta psicrométrica</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll-area -->
+
+    <!-- Sidebar — resultados sempre visíveis -->
+    <div class="sidebar">
+      <div class="sb-title">Resultado em tempo real</div>
+
+      <div class="sb-big" id="sb-timax" style="color:var(--rd)">—</div>
+      <div class="sb-big-lbl">ti_max (°C)</div>
+      <div class="diag-sb d-crit" id="sb-diag" style="margin-bottom:14px">—</div>
+
+      <div class="sb-row"><span class="sb-lbl">☀️ Qsol (pico)</span><span class="sb-val yw" id="sb-qsol">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">🏢 Qint</span><span class="sb-val" id="sb-qint">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">Σ Total ganhos</span><span class="sb-val yw" id="sb-tg">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">Q't coef. perdas</span><span class="sb-val" id="sb-qt">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">Δt = Ganhos/Q't</span><span class="sb-val or" id="sb-dt">—</span></div>
+      <div style="height:10px"></div>
+      <div class="sb-row"><span class="sb-lbl">t̄e máx</span><span class="sb-val" id="sb-temax">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">t̄e mín</span><span class="sb-val" id="sb-temin">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">t̄e média</span><span class="sb-val" id="sb-temed">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">E (amplitude)</span><span class="sb-val" id="sb-E">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">m (inércia)</span><span class="sb-val" id="sb-m">—</span></div>
+      <div class="sb-row"><span class="sb-lbl">T. conforto</span><span class="sb-val gn" id="sb-tconf">—</span></div>
+      <div class="sb-row" style="border-top:2px solid var(--brd2);margin-top:4px;padding-top:8px">
+        <span class="sb-lbl">ti_max − conforto</span>
+        <span class="sb-val rd" id="sb-diff">—</span>
+      </div>
+
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--brd)">
+        <div class="sb-title">Hora pico Qsol</div>
+        <div class="sb-big" id="sb-hora" style="font-size:18px;color:var(--yw)">—</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PÁGINA 2 — RESUMO
+══════════════════════════════════════════ -->
+<div id="page-res" class="page">
+  <div class="res-page">
+
+    <div class="card" style="margin-top:0">
+      <div class="card-hdr"><span class="tag">RESULTADO</span><h2>Resumo Executivo — Balanço Térmico</h2></div>
+      <div id="r-diag-full" class="diag-full d-crit">—</div>
+
+      <div class="calc-grid">
+        <!-- Ganhos -->
+        <div class="step-box">
+          <div class="step-title">A — Ganhos de calor (W)</div>
+          <div class="step-row"><span>A1 Qsol (pico solar)</span><span id="rr-qsol">—</span></div>
+          <div class="step-row"><span>A2 Qp (pessoas)</span><span id="rr-qp">—</span></div>
+          <div class="step-row"><span>A3 Qil (iluminação)</span><span id="rr-qil">—</span></div>
+          <div class="step-row"><span>A4 Qe (equipamentos)</span><span id="rr-qe">—</span></div>
+          <div class="step-row"><span>Qint (p + il + equip)</span><span id="rr-qint">—</span></div>
+          <div class="step-row"><span>TOTAL GANHOS</span><span id="rr-tg">—</span></div>
+        </div>
+        <!-- Perdas -->
+        <div class="step-box">
+          <div class="step-title">B — Perdas / coef. Q't (W/°C)</div>
+          <div id="rr-losses-rows"></div>
+          <div class="step-row"><span>TOTAL Q't</span><span id="rr-qt">—</span></div>
+        </div>
+        <!-- Clima -->
+        <div class="step-box">
+          <div class="step-title">C — Dados Climáticos</div>
+          <div class="step-row"><span>Td / Ts</span><span id="rr-tdts">—</span></div>
+          <div class="step-row"><span>td / ts</span><span id="rr-tdts2">—</span></div>
+          <div class="step-row"><span>t̄e máx = (Td+Ts)/2</span><span id="rr-temax">—</span></div>
+          <div class="step-row"><span>t̄e mín = (td+ts)/2</span><span id="rr-temin">—</span></div>
+          <div class="step-row"><span>t̄e média</span><span id="rr-temed">—</span></div>
+          <div class="step-row"><span>E = (t̄emax−t̄emin)/2</span><span id="rr-E">—</span></div>
+          <div class="step-row"><span>UR</span><span id="rr-ur">—</span></div>
+        </div>
+        <!-- Resultado final -->
+        <div class="step-box">
+          <div class="step-title">D — Temperatura Interna Máxima</div>
+          <div class="step-row"><span>Δt = Ganhos / Q't</span><span id="rr-dt">—</span></div>
+          <div class="step-row"><span>t̄e máx (usada)</span><span id="rr-te-used">—</span></div>
+          <div class="step-row"><span>E (amplitude)</span><span id="rr-e-used">—</span></div>
+          <div class="step-row"><span>m (inércia)</span><span id="rr-m">—</span></div>
+          <div class="step-row"><span>ti_max = t̄e+(1−m)·E+(1−m)·Δt</span><span id="rr-timax">—</span></div>
+          <div class="step-row"><span>T. conforto</span><span id="rr-tconf">—</span></div>
+          <div class="step-row"><span>DIFERENÇA (ti−conf)</span><span id="rr-diff">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela mestre -->
+    <div class="card master-card">
+      <div class="card-hdr"><span class="tag">TABELA MESTRE</span><h2>Elementos Construtivos — Síntese</h2></div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>ID</th><th>Nome</th><th>U (W/m²K)</th><th>Σ R camadas</th><th>1/U</th><th>FS</th><th>Área (m²)</th><th>he</th><th>hi</th></tr></thead>
+          <tbody id="master-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════ HELPERS ══════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const v   = id => document.getElementById(id)?.value ?? 0;
+const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+const f2  = n => (isNaN(n)||!isFinite(n)) ? '—' : n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const f3  = n => (isNaN(n)||!isFinite(n)) ? '—' : n.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3});
+const f4  = n => (isNaN(n)||!isFinite(n)) ? '—' : n.toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4});
+
+// ══════════ STATE ══════════
+let elems=[], qSurfs=[], equips=[], losses=[];
+
+// ══════════ INIT ══════════
+function init() {
+  elems = [
+    {id:'E1',nome:'Parede opaca',he:0.17,hi:0,fs:0,area:22,
+     layers:[{n:'Reboco externo (arg. cal)',e:0.02,l:0.65},{n:'Tijolo furado 14cm',e:0.19,l:0.91},{n:'Reboco interno (arg. cal)',e:0.02,l:0.65},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0}]},
+    {id:'E2',nome:'Vitrine fachada Leste',he:0.17,hi:0,fs:0.6,area:27,
+     layers:[{n:'Vidro atérmico verde-claro',e:0.006,l:0.8},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0}]},
+    {id:'E3',nome:'Vitrine + porta fachada Norte',he:0.17,hi:0,fs:0.6,area:15,
+     layers:[{n:'Vidro atérmico verde-claro',e:0.006,l:0.8},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0}]},
+    {id:'E4',nome:'Cobertura — PERDA de calor',he:0.20,hi:0,fs:0,area:60,
+     layers:[{n:'Laje concreto armado',e:0.07,l:1.75},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0}]},
+    {id:'E5',nome:'Cobertura — GANHO de calor',he:0.22,hi:0,fs:0,area:60,
+     layers:[{n:'Laje concreto armado',e:0.07,l:1.75},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0},{n:'',e:0,l:0}]},
+  ];
+  qSurfs = [
+    {nome:'Cobertura - Q1',         igRow:0,alpha:0.9,U:3.85,area:60,const_m:20},
+    {nome:'Fachada Leste - Parede', igRow:1,alpha:0.6,U:2.27,area:13,const_m:20},
+    {nome:'Fachada Leste - Vidro',  igRow:1,alpha:0.6,U:1.0, area:27,const_m:1 },
+    {nome:'Fachada Norte - Parede', igRow:2,alpha:0.6,U:2.27,area:9, const_m:20},
+    {nome:'Fachada Norte - Vidro',  igRow:2,alpha:0.6,U:1.0, area:15,const_m:1 },
+  ];
+  equips = [
+    {nome:'Computadores',             qtde:3, pot:450},
+    {nome:'Copiadora (1 HP ≈ 746 W)', qtde:1, pot:2237.1},
+  ];
+  losses = [
+    {via:'Cobertura',                          U:5.55,  area:60},
+    {via:'Paredes opacas (Leste + Norte)',      U:2.271, area:22},
+    {via:'Vidros (Leste + Norte)',              U:5.63,  area:42},
+    {via:'Ventilação (0,35 × trocas/h × Vol)', U:0.35,  area:240},
+  ];
+  renderElems(); renderQSurfs(); renderEquips(); renderLosses();
+  recalcOutputs();
+}
+
+// ══════════ PÁGINA ══════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.hdr-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.hdr-tab')[id==='calc'?0:1].classList.add('active');
+}
+
+// ══════════ ELEMENTOS ══════════
+function calcU(el) {
+  const sR  = el.layers.reduce((s,l) => s + (l.l > 0 ? l.e/l.l : 0), 0);
+  const inv = el.he + sR + el.hi;
+  return { U: inv > 0 ? 1/inv : 0, sR, inv };
+}
+
+function updateElemCalcs() {
+  elems.forEach((el,ei) => {
+    const {U,sR,inv} = calcU(el);
+    const props = document.querySelectorAll(`#elem-${ei} .eprops .res`);
+    if(props[0]) props[0].textContent = f4(sR)+' m²K/W';
+    if(props[1]) props[1].textContent = f4(inv);
+    const uSpan = document.querySelector(`#elem-${ei} .elem-res-u`);
+    if(uSpan) uSpan.textContent = f4(U);
+    el.layers.forEach((lay,li) => {
+      const cm = document.querySelector(`#elem-${ei} .rc-cm-${li}`);
+      const rr = document.querySelector(`#elem-${ei} .rc-r-${li}`);
+      if(cm) cm.textContent = lay.e > 0 ? f3(lay.e*100) : '—';
+      if(rr) rr.textContent = (lay.e>0 && lay.l>0) ? f4(lay.e/lay.l) : '—';
+    });
+  });
+}
+
+function renderElems() {
+  const c = document.getElementById('elem-container');
+  c.innerHTML = '';
+  elems.forEach((el,ei) => {
+    const {U,sR,inv} = calcU(el);
+    const d = document.createElement('div');
+    d.className='elem-block'; d.id=`elem-${ei}`;
+    d.innerHTML=`
+      <div class="elem-hdr">
+        <span class="eid">${el.id}</span>
+        <input class="ename" type="text" value="${esc(el.nome)}"
+          oninput="elems[${ei}].nome=this.value;updateMasterOnly()"
+          placeholder="Nome do elemento…">
+        <button class="del-btn" onclick="removeElem(${ei})">✕</button>
+      </div>
+      <div class="eprops">
+        <div class="field"><label>he (m²K/W)</label>
+          <input type="number" value="${el.he}" step="0.01"
+            oninput="elems[${ei}].he=+this.value;updateElemCalcs();recalcOutputs()"></div>
+        <div class="field"><label>hi (m²K/W)</label>
+          <input type="number" value="${el.hi}" step="0.01"
+            oninput="elems[${ei}].hi=+this.value;updateElemCalcs();recalcOutputs()"></div>
+        <div class="field"><label>FS</label>
+          <input type="number" value="${el.fs}" step="0.01" min="0" max="1"
+            oninput="elems[${ei}].fs=+this.value;updateMasterOnly()"></div>
+        <div class="field"><label>Área (m²)</label>
+          <input type="number" value="${el.area}" step="0.5"
+            oninput="elems[${ei}].area=+this.value;updateMasterOnly()"></div>
+        <div class="field"><label>Σ R camadas</label><div class="res">${f4(sR)} m²K/W</div></div>
+        <div class="field"><label>1/U = he+ΣR+hi</label><div class="res">${f4(inv)}</div></div>
+      </div>
+      <div class="layers-sec">
+        <div class="lhdr"><span>#  Nome da camada</span><span>e (m)</span><span>e (cm)</span><span>λ (W/mK)</span><span>R=e/λ</span></div>
+        ${el.layers.map((lay,li)=>`
+          <div class="lrow">
+            <input type="text" value="${esc(lay.n)}" placeholder="Nome da camada…"
+              oninput="elems[${ei}].layers[${li}].n=this.value">
+            <input type="number" value="${lay.e||''}" step="0.001" placeholder="0.000"
+              oninput="elems[${ei}].layers[${li}].e=+this.value;updateElemCalcs();recalcOutputs()">
+            <div class="rc rc-cm-${li}">${lay.e>0?f3(lay.e*100):'—'}</div>
+            <input type="number" value="${lay.l||''}" step="0.01" placeholder="0.00"
+              oninput="elems[${ei}].layers[${li}].l=+this.value;updateElemCalcs();recalcOutputs()">
+            <div class="rc rc-r-${li}">${lay.e>0&&lay.l>0?f4(lay.e/lay.l):'—'}</div>
+          </div>`).join('')}
+        <button class="add-layer-btn" onclick="addLayer(${ei})">＋ Camada</button>
+      </div>
+      <div class="eres">
+        <div class="ri"><label>U (W/m²K)</label><span class="elem-res-u">${f4(U)}</span></div>
+        <div class="ri"><label>FS</label><span>${el.fs}</span></div>
+        <div class="ri"><label>Área (m²)</label><span>${el.area}</span></div>
+        <div class="ri"><label>ID</label><span style="color:var(--tx2)">${el.id}</span></div>
+      </div>`;
+    c.appendChild(d);
+  });
+}
+function addElem() {
+  elems.push({id:`E${elems.length+1}`,nome:'',he:0.17,hi:0,fs:0,area:0,
+    layers:Array(6).fill(null).map(()=>({n:'',e:0,l:0}))});
+  renderElems(); updateMasterOnly();
+}
+function removeElem(i) {
+  elems.splice(i,1); elems.forEach((e,idx)=>e.id=`E${idx+1}`);
+  renderElems(); updateMasterOnly();
+}
+function addLayer(ei) { elems[ei].layers.push({n:'',e:0,l:0}); renderElems(); }
+
+// ══════════ Q SURFACES ══════════
+function renderQSurfs() {
+  const igL=['Horizontal (cobertura)','Fachada Leste','Fachada Norte'];
+  document.getElementById('qsurf-config').innerHTML = qSurfs.map((s,i)=>`
+    <div class="qsrow" id="qsurf-${i}">
+      <div class="field"><input type="text" value="${esc(s.nome)}"
+        oninput="qSurfs[${i}].nome=this.value;recalcOutputs()"></div>
+      <div class="field"><select onchange="qSurfs[${i}].igRow=+this.value;recalcOutputs()">
+        ${igL.map((l,li)=>`<option value="${li}" ${s.igRow===li?'selected':''}>${l}</option>`).join('')}
+      </select></div>
+      <div class="field"><input type="number" value="${s.alpha}" step="0.01" min="0" max="1"
+        oninput="qSurfs[${i}].alpha=+this.value;recalcOutputs()"></div>
+      <div class="field"><input type="number" value="${s.U}" step="0.001"
+        oninput="qSurfs[${i}].U=+this.value;recalcOutputs()"></div>
+      <div class="field"><input type="number" value="${s.area}" step="0.5"
+        oninput="qSurfs[${i}].area=+this.value;recalcOutputs()"></div>
+      <div class="field"><input type="number" value="${s.const_m}" step="1"
+        oninput="qSurfs[${i}].const_m=+this.value;recalcOutputs()"></div>
+      <div class="res qsurf-fn" style="font-size:10px">—</div>
+      <button class="del-btn" onclick="removeQSurf(${i})">✕</button>
+    </div>`).join('');
+}
+function addQSurf(){ qSurfs.push({nome:'Nova superfície',igRow:0,alpha:0.6,U:1.0,area:0,const_m:1}); renderQSurfs(); recalcOutputs(); }
+function removeQSurf(i){ qSurfs.splice(i,1); renderQSurfs(); recalcOutputs(); }
+
+// ══════════ EQUIPAMENTOS ══════════
+function updateEquipSubs(){ equips.forEach((e,i)=>{ const el=document.querySelector(`#eq-${i} .sub-cell`); if(el) el.textContent=f2(e.qtde*e.pot)+' W'; }); }
+function renderEquips(){
+  document.getElementById('equip-list').innerHTML=equips.map((e,i)=>`
+    <div class="eqrow" id="eq-${i}">
+      <input type="text" value="${esc(e.nome)}" placeholder="Equipamento…" oninput="equips[${i}].nome=this.value">
+      <input type="number" value="${e.qtde}" min="0" oninput="equips[${i}].qtde=+this.value;updateEquipSubs();recalcOutputs()">
+      <input type="number" value="${e.pot}" step="1" oninput="equips[${i}].pot=+this.value;updateEquipSubs();recalcOutputs()">
+      <span class="sub-cell">${f2(e.qtde*e.pot)} W</span>
+      <button class="del-btn" onclick="rmEquip(${i})">✕</button>
+    </div>`).join('');
+}
+function addEquip(){ equips.push({nome:'',qtde:1,pot:0}); renderEquips(); recalcOutputs(); }
+function rmEquip(i){ equips.splice(i,1); renderEquips(); recalcOutputs(); }
+
+// ══════════ PERDAS ══════════
+function updateLossSubs(){ losses.forEach((l,i)=>{ const el=document.querySelector(`#ls-${i} .sub-cell`); if(el) el.textContent=f2(l.U*l.area); }); }
+function renderLosses(){
+  document.getElementById('loss-list').innerHTML=losses.map((l,i)=>`
+    <div class="lsrow" id="ls-${i}">
+      <input type="text" value="${esc(l.via)}" placeholder="Via de perda…" oninput="losses[${i}].via=this.value">
+      <input type="number" value="${l.U}" step="0.001" oninput="losses[${i}].U=+this.value;updateLossSubs();recalcOutputs()">
+      <input type="number" value="${l.area}" step="0.5" oninput="losses[${i}].area=+this.value;updateLossSubs();recalcOutputs()">
+      <span class="sub-cell">${f2(l.U*l.area)}</span>
+      <button class="del-btn" onclick="rmLoss(${i})">✕</button>
+    </div>`).join('');
+}
+function addLoss(){ losses.push({via:'',U:0,area:0}); renderLosses(); recalcOutputs(); }
+function rmLoss(i){ losses.splice(i,1); renderLosses(); recalcOutputs(); }
+
+// ══════════ RECALC ══════════
+function recalcOutputs() {
+  // 1. Ig
+  const igData=[0,1,2].map(row=>{
+    const tr=document.getElementById(`ig-row-${row}`);
+    if(!tr) return Array(10).fill(0);
+    return Array.from(tr.querySelectorAll('input')).map(inp=>+inp.value||0);
+  });
+
+  // 2. Q por superfície
+  const hourTotals=Array(10).fill(0);
+  const tbody=document.getElementById('q-tbody');
+  if(tbody) tbody.innerHTML='';
+  const fnBoxes=document.querySelectorAll('.qsurf-fn');
+  qSurfs.forEach((s,si)=>{
+    const fn = s.const_m>0 ? s.alpha*s.U*s.area/s.const_m : 0;
+    if(fnBoxes[si]) fnBoxes[si].textContent=f4(fn);
+    const qRow=(igData[s.igRow]||Array(10).fill(0)).map(ig=>fn*ig);
+    qRow.forEach((val,h)=>hourTotals[h]+=val);
+    if(tbody){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="tl">${esc(s.nome)}</td><td class="tc">${f4(fn)}</td>${qRow.map(val=>`<td class="tc">${f2(val)}</td>`).join('')}`;
+      tbody.appendChild(tr);
+    }
+  });
+  hourTotals.forEach((val,h)=>set(`qt${h}`,f2(val)));
+  const peakQ   = hourTotals.length ? Math.max(...hourTotals) : 0;
+  const peakIdx = hourTotals.indexOf(peakQ);
+  const horas   = ['08h','09h','10h','11h','12h','13h','14h','15h','16h','17h'];
+  const peakHora= horas[peakIdx]||'—';
+  set('q-peak', `${f2(peakQ)} W  —  hora pico: ${peakHora}`);
+
+  // 3. Balanço
+  const Qsol = peakQ;
+  const Qp   = (+v('n_pess'))*(+v('w_pess'));
+  const Qil  = (+v('n_lamp'))*(+v('w_lamp'));
+  const Qe   = equips.reduce((s,e)=>s+e.qtde*e.pot,0);
+  const Qint = Qp+Qil+Qe;
+  const Qt   = losses.reduce((s,l)=>s+l.U*l.area,0);
+
+  // 4. Clima
+  const Td=+v('Td'), Ts=+v('Ts'), td_c=+v('td_c'), ts_c=+v('ts_c'), UR=+v('UR');
+  const te_max=(Td+Ts)/2, te_min=(td_c+ts_c)/2;
+  const te_med=(te_max+te_min)/2, E=(te_max-te_min)/2;
+  const m=+v('m_sel'), t_conf=+v('t_conf');
+  const Dt = Qt>0 ? (Qsol+Qint)/Qt : 0;
+  const ti_max = te_max+(1-m)*E+(1-m)*Dt;
+  const diff   = ti_max-t_conf;
+
+  // 5. Update displays na página de cálculo
+  set('te_max_disp', te_max.toFixed(1)+' °C');
+  set('te_min_disp', te_min.toFixed(1)+' °C');
+  set('te_med_disp', te_med.toFixed(2)+' °C');
+  set('E_disp',      E.toFixed(2)+' °C');
+  set('bal-qsol', f2(Qsol)+' W');
+  set('bal-qp',   f2(Qp)+' W');
+  set('bal-qil',  f2(Qil)+' W');
+  set('bal-qe',   f2(Qe)+' W');
+  set('bal-qint', f2(Qint)+' W');
+  set('bal-qt',   f2(Qt)+' W/°C');
+
+  // 6. Sidebar
+  set('sb-qsol',  f2(Qsol)+' W');
+  set('sb-qint',  f2(Qint)+' W');
+  set('sb-tg',    f2(Qsol+Qint)+' W');
+  set('sb-qt',    f2(Qt)+' W/°C');
+  set('sb-dt',    f2(Dt)+' °C');
+  set('sb-temax', te_max.toFixed(1)+' °C');
+  set('sb-temin', te_min.toFixed(1)+' °C');
+  set('sb-temed', te_med.toFixed(2)+' °C');
+  set('sb-E',     E.toFixed(2)+' °C');
+  set('sb-m',     m.toString());
+  set('sb-tconf', t_conf.toFixed(1)+' °C');
+  set('sb-hora',  peakHora);
+  const diffEl=document.getElementById('sb-diff');
+  if(diffEl){ diffEl.textContent=(diff>=0?'+':'')+diff.toFixed(2)+' °C'; diffEl.className='sb-val '+(diff<=0?'gn':diff<4?'or':'rd'); }
+  const timaxEl=document.getElementById('sb-timax');
+  if(timaxEl){ timaxEl.textContent=ti_max.toFixed(1); timaxEl.style.color=diff<=0?'var(--gn)':diff<4?'var(--or)':'var(--rd)'; }
+  diagStyle('sb-diag', diff, ti_max, t_conf);
+
+  // 7. Página de resumo
+  set('rr-qsol', f2(Qsol)+' W');
+  set('rr-qp',   f2(Qp)+' W');
+  set('rr-qil',  f2(Qil)+' W');
+  set('rr-qe',   f2(Qe)+' W');
+  set('rr-qint', f2(Qint)+' W');
+  set('rr-tg',   f2(Qsol+Qint)+' W');
+  const lossRows=document.getElementById('rr-losses-rows');
+  if(lossRows) lossRows.innerHTML=losses.map(l=>`<div class="step-row"><span>${esc(l.via)}</span><span>${f2(l.U*l.area)}</span></div>`).join('');
+  set('rr-qt',      f2(Qt)+' W/°C');
+  set('rr-tdts',    `${Td} / ${Ts} °C`);
+  set('rr-tdts2',   `${td_c} / ${ts_c} °C`);
+  set('rr-temax',   te_max.toFixed(1)+' °C');
+  set('rr-temin',   te_min.toFixed(1)+' °C');
+  set('rr-temed',   te_med.toFixed(2)+' °C');
+  set('rr-E',       E.toFixed(2)+' °C');
+  set('rr-ur',      UR+' %');
+  set('rr-dt',      f2(Dt)+' °C');
+  set('rr-te-used', te_max.toFixed(1)+' °C');
+  set('rr-e-used',  E.toFixed(2)+' °C');
+  set('rr-m',       m.toString());
+  set('rr-timax',   ti_max.toFixed(2)+' °C');
+  set('rr-tconf',   t_conf.toFixed(1)+' °C');
+  const diffRR=document.getElementById('rr-diff');
+  if(diffRR){ diffRR.textContent=(diff>=0?'+':'')+diff.toFixed(2)+' °C'; diffRR.style.color=diff<=0?'var(--gn)':diff<4?'var(--or)':'var(--rd)'; }
+  diagStyle('r-diag-full', diff, ti_max, t_conf);
+
+  updateMasterOnly();
+}
+
+function diagStyle(id, diff, ti_max, t_conf) {
+  const el=document.getElementById(id); if(!el) return;
+  el.className=el.className.replace(/\bd-\w+/g,'').trim();
+  if(diff<=0){ el.classList.add('d-ok');    el.textContent=`✅ CONFORTO — ti_max ${ti_max.toFixed(1)} °C ≤ conforto ${t_conf} °C`; }
+  else if(diff<2){ el.classList.add('d-warn');  el.textContent=`⚠️ ATENÇÃO — Desconforto leve: +${diff.toFixed(1)} °C acima do conforto`; }
+  else if(diff<6){ el.classList.add('d-alert'); el.textContent=`🟠 ALERTA — Desconforto moderado: +${diff.toFixed(1)} °C — avalie intervenções passivas`; }
+  else           { el.classList.add('d-crit');  el.textContent=`🔴 CRÍTICO — Desconforto severo: +${diff.toFixed(1)} °C — considere AC ou estratégias passivas`; }
+}
+
+function updateMasterOnly() {
+  const tb=document.getElementById('master-tbody'); if(!tb) return;
+  tb.innerHTML=elems.map(el=>{ const {U,sR,inv}=calcU(el); return `
+    <tr>
+      <td style="font-family:var(--mono);color:var(--ac)">${el.id}</td>
+      <td>${esc(el.nome)||'—'}</td>
+      <td style="font-family:var(--mono);color:var(--ac)">${f4(U)}</td>
+      <td style="font-family:var(--mono)">${f4(sR)}</td>
+      <td style="font-family:var(--mono)">${f4(inv)}</td>
+      <td style="font-family:var(--mono)">${el.fs}</td>
+      <td style="font-family:var(--mono)">${el.area}</td>
+      <td style="font-family:var(--mono)">${el.he}</td>
+      <td style="font-family:var(--mono)">${el.hi}</td>
+    </tr>`; }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
