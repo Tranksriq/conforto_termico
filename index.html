@@ -142,6 +142,62 @@ table input[type=number]{background:var(--inp);border:none;outline:none;color:va
 .step-box .step-row span:first-child{color:var(--tx2)}
 .step-box .step-row span:last-child{color:var(--tx)}
 .calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+
+/* ── botão PDF ── */
+.pdf-btn{display:flex;align-items:center;gap:7px;background:#dc2626;color:#fff;border:none;cursor:pointer;padding:9px 18px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;transition:all .2s;margin-left:auto}
+.pdf-btn:hover{background:#b91c1c;transform:translateY(-1px);box-shadow:0 4px 14px rgba(220,38,38,.4)}
+.pdf-btn svg{flex-shrink:0}
+
+/* ── print / PDF ── */
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+
+  /* esconde tudo menos o resumo */
+  header, #page-calc, .hdr-tabs { display: none !important; }
+  #page-res { display: block !important; }
+  .res-page { max-width: 100%; padding: 0; margin: 0; }
+  .pdf-btn { display: none !important; }
+
+  /* reset cores para fundo branco */
+  :root {
+    --bg: #fff; --surf: #fff; --surf2: #f4f6f9;
+    --brd: #d1d5db; --brd2: #9ca3af;
+    --tx: #111; --tx2: #374151; --tx3: #6b7280;
+    --ac: #0369a1; --ac2: #0369a1;
+    --gn: #15803d; --yw: #b45309; --or: #c2410c; --rd: #b91c1c;
+    --inp: #f9fafb;
+    --mono: 'Courier New', monospace; --sans: Arial, sans-serif;
+  }
+  body { background: #fff !important; color: #111 !important; font-size: 11px; }
+
+  /* cabeçalho do PDF */
+  .pdf-header { display: flex !important; }
+
+  .card { border: 1px solid #d1d5db; border-radius: 6px; padding: 12px; margin-bottom: 10px; break-inside: avoid; }
+  .card-hdr { border-bottom: 1px solid #d1d5db; margin-bottom: 10px; padding-bottom: 8px; }
+  .card-hdr h2 { font-size: 13px; font-weight: 700; color: #111; }
+  .tag { border: 1px solid #9ca3af; color: #0369a1; font-size: 8px; }
+
+  .diag-full { border-radius: 5px; padding: 10px 14px; font-size: 12px; break-inside: avoid; }
+  .d-ok  { background: #f0fdf4 !important; border-color: #16a34a !important; color: #15803d !important; }
+  .d-warn{ background: #fffbeb !important; border-color: #d97706 !important; color: #b45309 !important; }
+  .d-alert{background: #fff7ed !important; border-color: #ea580c !important; color: #c2410c !important; }
+  .d-crit{ background: #fef2f2 !important; border-color: #dc2626 !important; color: #b91c1c !important; }
+
+  .calc-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .step-box { background: #f4f6f9; border: 1px solid #d1d5db; border-radius: 5px; padding: 9px; break-inside: avoid; }
+  .step-box .step-title { color: #0369a1; font-size: 9px; margin-bottom: 6px; }
+  .step-box .step-row { border-bottom: 1px solid #e5e7eb; padding: 2px 0; font-size: 10px; }
+  .step-box .step-row span:first-child { color: #374151; }
+  .step-box .step-row span:last-child  { color: #111; font-weight: 500; }
+  .step-box .step-row:last-child { color: #b45309; border-top: 1px solid #d1d5db; font-weight: 700; }
+
+  table { font-size: 9px; border-collapse: collapse; width: 100%; }
+  th { background: #f4f6f9 !important; color: #374151 !important; border: 1px solid #d1d5db; padding: 4px 6px; }
+  td { border: 1px solid #d1d5db; padding: 3px 6px; color: #111; background: #fff !important; }
+  .tl { color: #374151 !important; background: #f9fafb !important; }
+  .master-card { break-before: auto; }
+}
 </style>
 </head>
 <body>
@@ -367,8 +423,24 @@ table input[type=number]{background:var(--inp);border:none;outline:none;color:va
 <div id="page-res" class="page">
   <div class="res-page">
 
+    <!-- Cabeçalho visível só no PDF -->
+    <div class="pdf-header" style="display:none;justify-content:space-between;align-items:flex-end;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #d1d5db">
+      <div>
+        <div style="font-size:20px;font-weight:700;color:#111">Desempenho Térmico</div>
+        <div style="font-size:11px;color:#6b7280;font-family:monospace">Transmitância · Ganhos Solares · Balanço Térmico</div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:#6b7280;font-family:monospace" id="pdf-date"></div>
+    </div>
+
     <div class="card" style="margin-top:0">
-      <div class="card-hdr"><span class="tag">RESULTADO</span><h2>Resumo Executivo — Balanço Térmico</h2></div>
+      <div class="card-hdr">
+        <span class="tag">RESULTADO</span>
+        <h2>Resumo Executivo — Balanço Térmico</h2>
+        <button class="pdf-btn" onclick="gerarPDF()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Baixar PDF
+        </button>
+      </div>
       <div id="r-diag-full" class="diag-full d-crit">—</div>
 
       <div class="calc-grid">
@@ -760,6 +832,25 @@ function updateMasterOnly() {
       <td style="font-family:var(--mono)">${el.he}</td>
       <td style="font-family:var(--mono)">${el.hi}</td>
     </tr>`; }).join('');
+}
+
+function gerarPDF() {
+  // Garante que a página de resumo está ativa (necessário para print)
+  const wasOnCalc = document.getElementById('page-calc').classList.contains('active');
+  if (wasOnCalc) showPage('res');
+
+  // Preenche data no cabeçalho do PDF
+  const dateEl = document.getElementById('pdf-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('pt-BR', {
+    day:'2-digit', month:'long', year:'numeric'
+  });
+
+  // Pequeno delay para o DOM renderizar antes do print
+  setTimeout(() => {
+    window.print();
+    // Volta para a página de cálculo se estava lá
+    if (wasOnCalc) setTimeout(() => showPage('calc'), 300);
+  }, 120);
 }
 
 init();
